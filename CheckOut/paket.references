@@ -1,2 +1,4 @@
 xunit
 xunit.runner.visualstudio
+xunit.runners
+xunit.runner.console
