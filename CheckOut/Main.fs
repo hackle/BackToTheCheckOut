@@ -24,15 +24,27 @@ let takeItems code qty (items: (Item * Quantity) list) =
                                         else it')
         Some rest
 
-let calcOne { Item = Item code; Quantity = Quantity qty; Price = Price p } (accu: PriceState) =
+let rec calcOne pricing (accu: PriceState) =
+    let { Item = Item code; Quantity = Quantity qty; Price = Price p } = pricing
     let { Items = items; Total = Price total } = accu
     let rest = items |> takeItems code qty 
 
     match rest with
     | None -> accu
-    | Some r -> { Items = r; Total = Price (total + p) }
+    | Some r -> calcOne pricing { Items = r; Total = Price (total + p) }
     
 
-let calc items =
-    items
-    |> List.sumBy findPrice
+let calc itemCodes =
+    let items = 
+        itemCodes
+        |> List.map Item
+        |> List.groupBy id
+        |> List.map (fun (it, ls) -> (it, Quantity (ls |> List.length)))
+    let initialState = { Items = items; Total = Price 0 }
+
+    let finalState =
+        pricings
+        |> List.fold (fun st p -> calcOne p st) initialState
+
+    finalState.Total
+    
