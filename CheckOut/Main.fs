@@ -7,6 +7,12 @@ type Quantity = Quantity of int
 type Pricing = { Items: (Item * Quantity) list; Price: Price }
 type PriceState = { Items: (Item * Quantity) list; Total: Price }
 
+let (-) (Quantity qty1) (Quantity qty2) =
+    Quantity (qty1 - qty2)
+
+let (+) (Price p1) (Price p2) =
+    Price (p1 + p2)
+
 let pricings = [
     { Items = [ (Item 'A', Quantity 3) ]; Price = Price 130 }
     { Items = [ (Item 'A', Quantity 1); (Item 'B', Quantity 1) ]; Price = Price 70 }
@@ -14,31 +20,28 @@ let pricings = [
     { Items = [ (Item 'B', Quantity 1) ]; Price = Price 30 }
 ]
 
-let tryApply (pricing: Pricing) (items: (Item * Quantity) list) =
-    let take' (Item item, Quantity qty) =
-        let itemInPricing = pricing.Items |> List.tryFind (fun (Item it, _) -> it = item)
-        match itemInPricing with
-        | None -> None
-        | Some (_, Quantity qw) -> 
-            let q' = qty - qw
-            if q' < 0
-                then None
-                else Some (Item item, Quantity q')
+let rec applyPricingOnce (pricing: Pricing) (priceState: PriceState) = 
+    let { Items = itemsToBuy; Total = total } = priceState
 
-    let attempt = items |> List.map take'
-    if attempt |> List.exists Option.isNone
-        then None
-        else attempt |> List.map (fun v -> v.Value) |> Some
+    let pricingCanApply = 
+        let canApply' (pIt, pQty) =
+            itemsToBuy |> List.exists (fun (bIt, bQty) -> bIt = pIt && bQty >= pQty)
+            
+        pricing.Items
+        |> List.forall canApply'
 
-let rec calcOne pricing (accu: PriceState) =
-    let { Price = Price price } = pricing
-    let { Items = items; Total = Price total } = accu
-    let rest = items |> tryApply pricing
-
-    match rest with
-    | None -> accu
-    | Some r -> calcOne pricing { Items = r; Total = Price (total + price) }    
-
+    if not pricingCanApply
+        then priceState
+        else 
+            let pricingMap = pricing.Items |> dict
+            let rest =
+                itemsToBuy
+                |> List.map (fun (aIt, aQty) -> 
+                                if pricingMap.ContainsKey aIt
+                                    then aIt, (aQty - pricingMap.Item(aIt))
+                                    else (aIt, aQty))
+            applyPricingOnce pricing { Items = rest; Total = total + pricing.Price }
+            
 let calc itemCodes =
     let items = 
         itemCodes
@@ -49,7 +52,7 @@ let calc itemCodes =
 
     let finalState =
         pricings
-        |> List.fold (fun st p -> calcOne p st) initialState
+        |> List.fold (fun st p -> applyPricingOnce p st) initialState
 
     finalState.Total
     
