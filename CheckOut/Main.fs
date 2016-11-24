@@ -1,10 +1,11 @@
 ﻿module Main
 
-
 type Item = Item of char
 type Price = Price of int
 type Quantity = Quantity of int
-type Pricing = { Items: (Item * Quantity) list; Price: Price }
+type SomeOfPricing = { Items: (Item * Quantity) list; Price: Price }
+type AnyOfPricing = { ChooseFrom: Item list; Any: Quantity; Price: Price }
+type Pricing = SomeOfPricing | AnyOfPricing
 type PriceState = { Items: (Item * Quantity) list; Total: Price }
 
 let (-) (Quantity qty1) (Quantity qty2) =
