@@ -19,6 +19,10 @@ let pricings: Pricing list = [
     SomeOf { Items = [ (Item 'A', Quantity 1); (Item 'B', Quantity 1) ]; Price = Price 70 }
     SomeOf { Items = [ (Item 'A', Quantity 1) ]; Price = Price 50 }
     SomeOf { Items = [ (Item 'B', Quantity 1) ]; Price = Price 30 }
+    AnyOf { ChooseFrom = [ Item 'C'; Item 'D'; Item 'E' ]; Quantity = Quantity 2; Price = Price 10 }
+    SomeOf { Items = [ (Item 'C', Quantity 1) ]; Price = Price 5 }
+    SomeOf { Items = [ (Item 'D', Quantity 1) ]; Price = Price 6 }
+    SomeOf { Items = [ (Item 'E', Quantity 1) ]; Price = Price 7 }
 ]
 
 let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState) = 
