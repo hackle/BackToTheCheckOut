@@ -4,8 +4,8 @@ type Item = Item of char
 type Price = Price of int
 type Quantity = Quantity of int
 type SomeOfPricing = { Items: (Item * Quantity) list; Price: Price }
-type AnyOfPricing = { ChooseFrom: Item list; Any: Quantity; Price: Price }
-type Pricing = SomeOfPricing | AnyOfPricing
+type AnyOfPricing = { ChooseFrom: Item list; Quantity: Quantity; Price: Price }
+type Pricing = SomeOf of SomeOfPricing | AnyOf of AnyOfPricing
 type PriceState = { Items: (Item * Quantity) list; Total: Price }
 
 let (-) (Quantity qty1) (Quantity qty2) =
@@ -14,14 +14,14 @@ let (-) (Quantity qty1) (Quantity qty2) =
 let (+) (Price p1) (Price p2) =
     Price (p1 + p2)
 
-let pricings = [
-    { Items = [ (Item 'A', Quantity 3) ]; Price = Price 130 }
-    { Items = [ (Item 'A', Quantity 1); (Item 'B', Quantity 1) ]; Price = Price 70 }
-    { Items = [ (Item 'A', Quantity 1) ]; Price = Price 50 }
-    { Items = [ (Item 'B', Quantity 1) ]; Price = Price 30 }
+let pricings: Pricing list = [
+    SomeOf { Items = [ (Item 'A', Quantity 3) ]; Price = Price 130 }
+    SomeOf { Items = [ (Item 'A', Quantity 1); (Item 'B', Quantity 1) ]; Price = Price 70 }
+    SomeOf { Items = [ (Item 'A', Quantity 1) ]; Price = Price 50 }
+    SomeOf { Items = [ (Item 'B', Quantity 1) ]; Price = Price 30 }
 ]
 
-let rec applyPricingOnce (pricing: Pricing) (priceState: PriceState) = 
+let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState) = 
     let { Items = itemsToBuy; Total = total } = priceState
 
     let pricingCanApply = 
@@ -41,7 +41,20 @@ let rec applyPricingOnce (pricing: Pricing) (priceState: PriceState) =
                                 if pricingMap.ContainsKey aIt
                                     then aIt, (aQty - pricingMap.Item(aIt))
                                     else (aIt, aQty))
-            applyPricingOnce pricing { Items = rest; Total = total + pricing.Price }
+            applySomeOfPricingOnce pricing { Items = rest; Total = total + pricing.Price }
+
+let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
+    priceState
+//    let { ChooseFrom = itemsToChooseFrom; Quantity = quantityToQualify; Price = price } = pricing
+//    let { Items = itemsToBuy; Total = total } = priceState
+//
+//    let canApplyPricing
+
+
+let applyPricingOnce (pricing: Pricing) (priceState: PriceState) =
+    match pricing with
+    | SomeOf sop -> applySomeOfPricingOnce sop priceState
+    | AnyOf aop -> applyAnyOfPricingOnce aop priceState
             
 let calc itemCodes =
     let items = 
