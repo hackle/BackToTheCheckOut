@@ -26,6 +26,7 @@ let ``Price for combo of 'A' and 'B'`` (cntA, cntB, expectedPrice) =
     let (Price price) = a's @ b's |> calc
     Assert.Equal(price, expectedPrice)
 
+// C D E priced 5 6 7 
 [<Theory>]
 [<InlineData(1, 0, 0, 5)>]
 [<InlineData(0, 1, 0, 6)>]
@@ -33,6 +34,12 @@ let ``Price for combo of 'A' and 'B'`` (cntA, cntB, expectedPrice) =
 [<InlineData(1, 1, 0, 10)>]
 [<InlineData(0, 1, 1, 10)>]
 [<InlineData(1, 0, 1, 10)>]
+[<InlineData(2, 0, 0, 10)>]
+[<InlineData(0, 0, 2, 10)>]
+[<InlineData(0, 2, 0, 10)>]
+[<InlineData(4, 2, 0, 30)>]
+[<InlineData(5, 2, 0, 35)>]
+[<InlineData(5, 1, 0, 31)>]
 let ``Price for any 2 of 'C', 'D' and 'E'`` (cntC, cntD, cntE, expectedPrice) =
     let c's = 'C' |> List.replicate cntC
     let d's = 'D' |> List.replicate cntD
