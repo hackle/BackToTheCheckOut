@@ -1,18 +1,20 @@
 ﻿module Main
 
 type Item = Item of char
-type Price = Price of int
-type Quantity = Quantity of int
+type Price = Price of int with
+    static member (+) ((Price p1), (Price p2)) =  Price (p1 + p2)
+
+type Quantity = Quantity of int with
+    static member (-) ((Quantity qty1), (Quantity qty2)) = Quantity (qty1 - qty2)
+
 type SomeOfPricing = { Items: (Item * Quantity) list; Price: Price }
 type AnyOfPricing = { ChooseFrom: Item list; Quantity: Quantity; Price: Price }
 type Pricing = SomeOf of SomeOfPricing | AnyOf of AnyOfPricing
 type PriceState = { Items: (Item * Quantity) list; Total: Price }
 
-let (-) (Quantity qty1) (Quantity qty2) =
-    Quantity (qty1 - qty2)
-
-let (+) (Price p1) (Price p2) =
-    Price (p1 + p2)
+type List<'a> with
+    static member replaceAt index newItem (lst: (int * 'a) list) =
+        lst |> List.map (fun (i, v) -> if i = index then (i, newItem) else (i, v))
 
 let pricings: Pricing list = [
     SomeOf { Items = [ (Item 'A', Quantity 3) ]; Price = Price 130 }
@@ -48,12 +50,32 @@ let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState)
             applySomeOfPricingOnce pricing { Items = rest; Total = total + pricing.Price }
 
 let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
-    priceState
-//    let { ChooseFrom = itemsToChooseFrom; Quantity = quantityToQualify; Price = price } = pricing
-//    let { Items = itemsToBuy; Total = total } = priceState
-//
-//    let canApplyPricing
+    let { ChooseFrom = itemsToChooseFrom; Quantity = Quantity totalCombined; Price = price } = pricing
+    let { Items = itemsToBuy; Total = total } = priceState
 
+    let cntAvailableToTake (item, Quantity qty) =
+       if List.exists (fun it -> it = item) itemsToChooseFrom
+        then qty
+        else 0
+
+    let rec takeTill' cntNeeded itemsLeft (index, (item, Quantity qty)) =
+        if cntAvailableToTake (item, Quantity qty) = 0
+            then itemsLeft
+            else
+                let cntToTake = min qty totalCombined
+                let afterTaking = item, Quantity (qty - cntToTake)
+                let stillLeft = itemsLeft |> List.replaceAt index afterTaking
+                if cntToTake = cntNeeded
+                    then stillLeft
+                    else takeTill' (cntNeeded - cntToTake) stillLeft (index, (item, Quantity qty))
+
+    let cndQualifiedItems = itemsToBuy |> List.sumBy cntAvailableToTake
+    if cndQualifiedItems < totalCombined
+        then priceState
+        else
+            let indexed = itemsToBuy |> List.indexed
+            let rest = indexed |> List.fold (takeTill' totalCombined) indexed |> List.map snd
+            applyAnyOfPricingOnce pricing { Items = rest; Total = total + price }
 
 let applyPricingOnce (pricing: Pricing) (priceState: PriceState) =
     match pricing with
