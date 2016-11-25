@@ -50,7 +50,7 @@ let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState)
             applySomeOfPricingOnce pricing { Items = rest; Total = total + pricing.Price }
 
 let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
-    let { ChooseFrom = itemsToChooseFrom; Quantity = Quantity totalCombined; Price = price } = pricing
+    let { ChooseFrom = itemsToChooseFrom; Quantity = Quantity totalForPricing; Price = price } = pricing
     let { Items = itemsToBuy; Total = total } = priceState
 
     let cntAvailableToTake (item, Quantity qty) =
@@ -58,21 +58,22 @@ let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
         then qty
         else 0
 
-    let rec takeTill' cntNeeded itemsLeft (index, (item, Quantity qty)) =
-        if cntNeeded = 0 || cntAvailableToTake (item, Quantity qty) = 0
-            then itemsLeft
+    let rec takeTill' (cntTaken, itemsLeft) (index, (item, Quantity qty)) =
+        let stillNeeded = totalForPricing - cntTaken
+        if stillNeeded = 0 || cntAvailableToTake (item, Quantity qty) = 0
+            then (cntTaken, itemsLeft)
             else
-                let cntToTake = min qty totalCombined |> min cntNeeded
+                let cntToTake = min qty stillNeeded
                 let afterTaking = item, Quantity (qty - cntToTake)
                 let stillLeft = itemsLeft |> List.replaceAt index afterTaking
-                takeTill' (cntNeeded - cntToTake) stillLeft (index, (item, Quantity qty))
+                cntTaken + cntToTake, stillLeft
 
     let cndQualifiedItems = itemsToBuy |> List.sumBy cntAvailableToTake
-    if cndQualifiedItems < totalCombined
+    if cndQualifiedItems < totalForPricing
         then priceState
         else
             let indexed = itemsToBuy |> List.indexed
-            let rest = indexed |> List.fold (takeTill' totalCombined) indexed |> List.map snd
+            let rest = List.fold takeTill' (0, indexed) indexed |> snd |> List.map snd
             applyAnyOfPricingOnce pricing { Items = rest; Total = total + price }
 
 let applyPricingOnce (pricing: Pricing) (priceState: PriceState) =

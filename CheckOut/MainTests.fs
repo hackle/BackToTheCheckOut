@@ -38,8 +38,8 @@ let ``Price for combo of 'A' and 'B'`` (cntA, cntB, expectedPrice) =
 [<InlineData(0, 0, 2, 10)>]
 [<InlineData(0, 2, 0, 10)>]
 [<InlineData(4, 2, 0, 30)>]
-[<InlineData(5, 2, 0, 35)>]
-[<InlineData(5, 1, 0, 31)>]
+[<InlineData(5, 2, 0, 36)>]
+[<InlineData(5, 1, 0, 30)>]
 let ``Price for any 2 of 'C', 'D' and 'E'`` (cntC, cntD, cntE, expectedPrice) =
     let c's = 'C' |> List.replicate cntC
     let d's = 'D' |> List.replicate cntD
