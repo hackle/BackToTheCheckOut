@@ -59,15 +59,13 @@ let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
         else 0
 
     let rec takeTill' cntNeeded itemsLeft (index, (item, Quantity qty)) =
-        if cntAvailableToTake (item, Quantity qty) = 0
+        if cntNeeded = 0 || cntAvailableToTake (item, Quantity qty) = 0
             then itemsLeft
             else
-                let cntToTake = min qty totalCombined
+                let cntToTake = min qty totalCombined |> min cntNeeded
                 let afterTaking = item, Quantity (qty - cntToTake)
                 let stillLeft = itemsLeft |> List.replaceAt index afterTaking
-                if cntToTake = cntNeeded
-                    then stillLeft
-                    else takeTill' (cntNeeded - cntToTake) stillLeft (index, (item, Quantity qty))
+                takeTill' (cntNeeded - cntToTake) stillLeft (index, (item, Quantity qty))
 
     let cndQualifiedItems = itemsToBuy |> List.sumBy cntAvailableToTake
     if cndQualifiedItems < totalCombined
