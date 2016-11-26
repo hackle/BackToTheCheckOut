@@ -1,30 +1,31 @@
 ﻿module Main
 
 type Item = Item of char
-type Price = Price of int with
-    static member (+) ((Price p1), (Price p2)) =  Price (p1 + p2)
 
 [<Measure>]
 type pc
 
-type SomeOfPricing = { Items: (Item * int<pc>) list; Price: Price }
-type AnyOfPricing = { ChooseFrom: Item list; Quantity: int<pc>; Price: Price }
+[<Measure>]
+type cent
+
+type SomeOfPricing = { Items: (Item * int<pc>) list; Price: int<cent> }
+type AnyOfPricing = { ChooseFrom: Item list; Quantity: int<pc>; Price: int<cent> }
 type Pricing = SomeOf of SomeOfPricing | AnyOf of AnyOfPricing
-type PriceState = { Items: (Item * int<pc>) list; Total: Price }
+type PriceState = { Items: (Item * int<pc>) list; Total: int<cent> }
 
 type List<'a> with
     static member replaceAt index newItem (lst: (int * 'a) list) =
         lst |> List.map (fun (i, v) -> if i = index then (i, newItem) else (i, v))
 
 let pricings: Pricing list = [
-    SomeOf { Items = [ (Item 'A', 3<pc>) ]; Price = Price 130 }
-    SomeOf { Items = [ (Item 'A', 1<pc>); (Item 'B', 1<pc>) ]; Price = Price 70 }
-    SomeOf { Items = [ (Item 'A', 1<pc>) ]; Price = Price 50 }
-    SomeOf { Items = [ (Item 'B', 1<pc>) ]; Price = Price 30 }
-    AnyOf { ChooseFrom = [ Item 'C'; Item 'D'; Item 'E' ]; Quantity = 2<pc>; Price = Price 10 }
-    SomeOf { Items = [ (Item 'C', 1<pc>) ]; Price = Price 5 }
-    SomeOf { Items = [ (Item 'D', 1<pc>) ]; Price = Price 6 }
-    SomeOf { Items = [ (Item 'E', 1<pc>) ]; Price = Price 7 }
+    SomeOf { Items = [ (Item 'A', 3<pc>) ]; Price = 130<cent> }
+    SomeOf { Items = [ (Item 'A', 1<pc>); (Item 'B', 1<pc>) ]; Price = 70<cent> }
+    SomeOf { Items = [ (Item 'A', 1<pc>) ]; Price = 50<cent> }
+    SomeOf { Items = [ (Item 'B', 1<pc>) ]; Price = 30<cent> }
+    AnyOf { ChooseFrom = [ Item 'C'; Item 'D'; Item 'E' ]; Quantity = 2<pc>; Price = 10<cent> }
+    SomeOf { Items = [ (Item 'C', 1<pc>) ]; Price = 5<cent> }
+    SomeOf { Items = [ (Item 'D', 1<pc>) ]; Price = 6<cent> }
+    SomeOf { Items = [ (Item 'E', 1<pc>) ]; Price = 7<cent> }
 ]
 
 let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState) = 
@@ -87,7 +88,7 @@ let calc itemCodes =
         |> List.map Item
         |> List.groupBy id
         |> List.map (fun (it, ls) -> it, (List.length ls) * 1<pc>)
-    let initialState = { Items = items; Total = Price 0 }
+    let initialState = { Items = items; Total = 0<cent> }
 
     let finalState =
         pricings
