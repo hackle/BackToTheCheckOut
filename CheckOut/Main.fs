@@ -22,46 +22,48 @@ let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState)
 
     let pricingCanApply = List.forall isBuyingEnoughForPricing pricing.Items
 
-    if not pricingCanApply
-        then priceState
-        else 
-            let pricingMap = pricing.Items |> dict
-            let takeApplicableItems (itemLeft, quantityLeft) =
-                if pricingMap.ContainsKey itemLeft
-                    then itemLeft, (quantityLeft - pricingMap.Item(itemLeft))
-                    else (itemLeft, quantityLeft)
+    match pricingCanApply with
+    | false -> priceState
+    | true ->
+        let pricingItemsMap = dict pricing.Items
+        let takeApplicableItems (itemLeft, quantityLeft) =
+            match pricingItemsMap.ContainsKey itemLeft with
+            | true -> itemLeft, quantityLeft - pricingItemsMap.Item(itemLeft)
+            | false -> itemLeft, quantityLeft
 
-            let rest = List.map takeApplicableItems rest
-            applySomeOfPricingOnce pricing { Rest = rest; TotalPrice = totalPrice + pricing.Price }
+        let rest' = List.map takeApplicableItems rest
+        applySomeOfPricingOnce pricing { Rest = rest'; TotalPrice = totalPrice + pricing.Price }
 
 let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
     let { ChooseFrom = itemsToChooseFrom; Quantity = cntNeededForPricing; Price = price } = pricing
     let { Rest = itemsUnpaid; TotalPrice = total } = priceState
 
     let getCntBuyable (bItem, bQuantity) =
-       if List.exists ((=) bItem) itemsToChooseFrom then bQuantity else 0<piece>
+       match List.exists ((=) bItem) itemsToChooseFrom with 
+       | true -> bQuantity 
+       | false -> 0<piece>
 
     let rec takeOneLot (cntTaken, rest') (pItem, pQty) =
         let stillNeeded = cntNeededForPricing - cntTaken
-        if stillNeeded = 0<piece> || getCntBuyable (pItem, pQty) = 0<piece>
-            then (cntTaken, rest')
-            else
-                let cntToTake = min pQty stillNeeded
-                let replacer (it', qty') = 
-                    if it' = pItem 
-                    then pItem, pQty - cntToTake 
-                    else it', qty'
-                cntTaken + cntToTake, List.map replacer rest'
+        match stillNeeded = 0<piece> || getCntBuyable (pItem, pQty) = 0<piece> with
+        | true -> (cntTaken, rest')
+        | false ->
+            let cntToTake = min pQty stillNeeded
+            let replacer (it', qty') = 
+                match it' = pItem with
+                | true -> pItem, pQty - cntToTake 
+                | false -> it', qty'
+            cntTaken + cntToTake, List.map replacer rest'
 
     let cndQualifiedItems = List.sumBy getCntBuyable itemsUnpaid
-    if cndQualifiedItems < cntNeededForPricing
-        then priceState
-        else
-            let rest = itemsUnpaid 
-                        |> List.fold takeOneLot (0<piece>, itemsUnpaid)
-                        |> snd
-
-            applyAnyOfPricingOnce pricing { Rest = rest; TotalPrice = total + price }
+    match cndQualifiedItems < cntNeededForPricing with
+    | true -> priceState
+    | false -> 
+        let rest = itemsUnpaid 
+                    |> List.fold takeOneLot (0<piece>, itemsUnpaid)
+                    |> snd
+                        
+        applyAnyOfPricingOnce pricing { Rest = rest; TotalPrice = total + price }
 
 let applyPricingOnce (pricing: Pricing) (priceState: PriceState) =
     match pricing with
@@ -76,5 +78,5 @@ let calc pricings itemCodes =
         |> List.map (fun (item, itemGroup) -> item, (List.length itemGroup) * 1<piece>)
     
     pricings 
-    |>List.fold (fun st p -> applyPricingOnce p st) { Rest = items; TotalPrice = 0<cent> }
+    |> List.fold (fun st p -> applyPricingOnce p st) { Rest = items; TotalPrice = 0<cent> }
     |> (fun st -> st.TotalPrice)
