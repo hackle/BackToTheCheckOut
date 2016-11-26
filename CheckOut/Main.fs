@@ -13,10 +13,6 @@ type AnyOfPricing = { ChooseFrom: Item list; Quantity: int<piece>; Price: int<ce
 type Pricing = SomeOf of SomeOfPricing | AnyOf of AnyOfPricing
 type PriceState = { Rest: (Item * int<piece>) list; TotalPrice: int<cent> }
 
-type List<'a> with
-    static member replaceAt index newItem (ls: (int * 'a) list) =
-        ls |> List.map (fun (i, v) -> if i = index then (i, newItem) else (i, v))
-
 let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState) = 
     let { Rest = rest; TotalPrice = totalPrice } = priceState
     
@@ -45,25 +41,26 @@ let rec applyAnyOfPricingOnce (pricing: AnyOfPricing) (priceState: PriceState) =
     let getCntBuyable (bItem, bQuantity) =
        if List.exists ((=) bItem) itemsToChooseFrom then bQuantity else 0<piece>
 
-    let rec takeOneLot (cntTaken, indexedItemsUnpaid) (index, (pItem, pQty)) =
+    let rec takeOneLot (cntTaken, rest') (pItem, pQty) =
         let stillNeeded = cntNeededForPricing - cntTaken
         if stillNeeded = 0<piece> || getCntBuyable (pItem, pQty) = 0<piece>
-            then (cntTaken, indexedItemsUnpaid)
+            then (cntTaken, rest')
             else
                 let cntToTake = min pQty stillNeeded
-                let afterTaking = pItem, pQty - cntToTake
-                let stillLeft = List.replaceAt index afterTaking indexedItemsUnpaid
-                cntTaken + cntToTake, stillLeft
+                let replacer (it', qty') = 
+                    if it' = pItem 
+                    then pItem, pQty - cntToTake 
+                    else it', qty'
+                cntTaken + cntToTake, List.map replacer rest'
 
     let cndQualifiedItems = List.sumBy getCntBuyable itemsUnpaid
     if cndQualifiedItems < cntNeededForPricing
         then priceState
         else
-            let indexed = List.indexed itemsUnpaid
-            let rest = indexed 
-                        |> List.fold takeOneLot (0<piece>, indexed) 
+            let rest = itemsUnpaid 
+                        |> List.fold takeOneLot (0<piece>, itemsUnpaid)
                         |> snd
-                        |> List.map snd
+
             applyAnyOfPricingOnce pricing { Rest = rest; TotalPrice = total + price }
 
 let applyPricingOnce (pricing: Pricing) (priceState: PriceState) =
@@ -77,8 +74,7 @@ let calc pricings itemCodes =
         |> List.map Item
         |> List.groupBy id
         |> List.map (fun (item, itemGroup) -> item, (List.length itemGroup) * 1<piece>)
-    let initialState = { Rest = items; TotalPrice = 0<cent> }
-
-    let finalState = List.fold (fun st p -> applyPricingOnce p st) initialState pricings
-
-    finalState.TotalPrice
+    
+    pricings 
+    |>List.fold (fun st p -> applyPricingOnce p st) { Rest = items; TotalPrice = 0<cent> }
+    |> (fun st -> st.TotalPrice)
