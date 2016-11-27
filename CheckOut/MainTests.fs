@@ -4,7 +4,7 @@ open Domain
 open Main2
 open Xunit
 
-let pricings: Pricing list = [
+let getPricings(): Pricing list = [
     SomeOf { Items = [ (Item 'A', 3<piece>) ]; Price = 130<cent> }
     SomeOf { Items = [ (Item 'A', 1<piece>); (Item 'B', 1<piece>) ]; Price = 70<cent> }
     SomeOf { Items = [ (Item 'A', 1<piece>) ]; Price = 50<cent> }
@@ -22,7 +22,7 @@ let pricings: Pricing list = [
 [<InlineData(4, 180<cent>)>]
 [<InlineData(6, 260<cent>)>]
 let ``Price for only 'A's`` (cnt, expectedPrice) =    
-    let price = 'A' |> List.replicate cnt |> calc pricings
+    let price = 'A' |> List.replicate cnt |> calc (getPricings())
     Assert.Equal(price, expectedPrice)
 
 [<Theory>]
@@ -35,7 +35,7 @@ let ``Price for combo of 'A' and 'B'`` (cntA, cntB, expectedPrice) =
     let a's = 'A' |> List.replicate cntA
     let b's = 'B' |> List.replicate cntB
 
-    let price = a's @ b's |> calc pricings
+    let price = a's @ b's |> calc (getPricings())
     Assert.Equal(price, expectedPrice)
 
 // C D E priced 5 6 7 
@@ -57,5 +57,5 @@ let ``Price for any 2 of 'C', 'D' and 'E'`` (cntC, cntD, cntE, expectedPrice) =
     let d's = 'D' |> List.replicate cntD
     let e's = 'E' |> List.replicate cntE
 
-    let price = c's @ d's @ e's |> calc pricings
+    let price = c's @ d's @ e's |> calc (getPricings())
     Assert.Equal(price, expectedPrice)

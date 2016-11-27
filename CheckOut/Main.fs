@@ -2,8 +2,6 @@
 
 open Domain
 
-type PriceState = { Rest: (Item * int<piece>) list; TotalPrice: int<cent> }
-
 let rec applySomeOfPricingOnce (pricing: SomeOfPricing) (priceState: PriceState) = 
     let { Rest = rest; TotalPrice = totalPrice } = priceState
     
