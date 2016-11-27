@@ -12,12 +12,13 @@ let rec applySomeOfPricing (pricing: SomeOfPricing) (state: PriceState) =
             if stack' |> List.exists (fun (i, _) -> i = pItem) |> not 
             then None
             else
-                let attempt = 
-                    stack'
-                    |> List.map (fun (sItem, sCnt) -> 
-                                    if sItem = pItem 
-                                        then sItem, sCnt - pCnt 
-                                        else sItem, sCnt)
+                let takeIfMatch (sItem, sCnt) = 
+                    if sItem = pItem 
+                    then sItem, sCnt - pCnt 
+                    else sItem, sCnt
+
+                let attempt = stack' |> List.map takeIfMatch
+
                 if List.forall (fun (_, qty) -> qty >= 0<piece>) attempt
                 then attempt |> List.filter (fun (_, qty) -> qty > 0<piece>) |> Some
                 else None
@@ -25,10 +26,9 @@ let rec applySomeOfPricing (pricing: SomeOfPricing) (state: PriceState) =
     let applied = List.fold takeOneItem (Some state.Rest) pricing.Items
 
     match applied with
-    | Some s' ->  applySomeOfPricing pricing { Rest = s'; TotalPrice = state.TotalPrice + pricing.Price }
     | None -> state
+    | Some s' -> applySomeOfPricing pricing { Rest = s'; TotalPrice = state.TotalPrice + pricing.Price }
     
-
 let applyPricing state pricing =
     match pricing with
     | AnyOf aop -> applyAnyOfPricing aop state
