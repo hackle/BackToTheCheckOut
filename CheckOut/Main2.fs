@@ -2,7 +2,27 @@
 
 open Domain
 
-let applyAnyOfPricing pricing state = state
+let rec applyAnyOfPricing (pricing: AnyOfPricing) (state: PriceState) =
+    let summer (i, q) = if List.contains i pricing.ChooseFrom then q else 0<piece>
+
+    let rec takeOnce (acc: int<piece>) (items: (Item * int<piece>) list) =
+        if acc = pricing.Quantity
+        then items
+        else
+            if List.sumBy summer items < pricing.Quantity - acc
+            then items
+            else
+                let found = items |> List.find (fun (i, _) -> List.contains i pricing.ChooseFrom)
+                items
+                |> List.map (fun (i, q) -> if i = fst found then i, q - 1<piece> else (i, q))
+                |> List.filter (fun (_, q) -> q > 0<piece>)
+                |> takeOnce (acc + 1<piece>)
+
+    let attempt = takeOnce 0<piece> state.Rest
+
+    if List.sumBy summer state.Rest < pricing.Quantity 
+    then state
+    else applyAnyOfPricing pricing { Rest = attempt; TotalPrice = state.TotalPrice + pricing.Price }
 
 let rec applySomeOfPricing (pricing: SomeOfPricing) (state: PriceState) =
     let takeOneItem (stack: (Item * int<piece>) list option) (pItem: Item, pCnt: int<piece>) =
