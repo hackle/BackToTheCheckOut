@@ -199,11 +199,12 @@
   </Target>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Main.fs" />
-    <Compile Include="MainTests.fs" />
-    <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
+    <Compile Include="Domain.fs" />
+    <Compile Include="Main.fs" />
+    <Compile Include="Main2.fs" />
+    <Compile Include="MainTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data.TypeProviders" />

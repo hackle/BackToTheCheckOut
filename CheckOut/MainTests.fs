@@ -1,6 +1,7 @@
 ﻿module MainTests
 
-open Main
+open Domain
+open Main2
 open Xunit
 
 let pricings: Pricing list = [
