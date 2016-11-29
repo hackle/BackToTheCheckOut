@@ -21,23 +21,20 @@ let rec applyAnyOfPricing (pricing: AnyOfPricing) (state: PriceState) =
     | false -> applyAnyOfPricing pricing { Rest = takeOnce 0<piece> state.Rest; TotalPrice = state.TotalPrice + pricing.Price }
 
 let rec applySomeOfPricing (pricing: SomeOfPricing) (state: PriceState) =
-    let takeOneItem (stack: (Item * int<piece>) list option) (pItem: Item, pCnt: int<piece>) =
+    let takeOneItem (stack: (Item * int<piece>) list option) (pItem: Item, pCnt: int<piece>) =    
+        let takeIfMatch (sItem, sCnt) = 
+            match sItem = pItem with
+            | true -> sItem, sCnt - pCnt 
+            | false -> sItem, sCnt
+
         match stack with
         | None -> None
+        | Some stack' when stack' |> List.exists (fun (i, _) -> i = pItem) |> not -> None
         | Some stack' ->
-            if stack' |> List.exists (fun (i, _) -> i = pItem) |> not 
-            then None
-            else
-                let takeIfMatch (sItem, sCnt) = 
-                    if sItem = pItem 
-                    then sItem, sCnt - pCnt 
-                    else sItem, sCnt
-
-                let attempt = stack' |> List.map takeIfMatch
-
-                if List.forall (fun (_, qty) -> qty >= 0<piece>) attempt
-                then attempt |> List.filter (fun (_, qty) -> qty > 0<piece>) |> Some
-                else None
+            let attempt = stack' |> List.map takeIfMatch
+            match List.forall (fun (_, qty) -> qty >= 0<piece>) attempt with
+            | false -> None
+            | true -> attempt |> List.filter (fun (_, qty) -> qty > 0<piece>) |> Some
 
     let applied = List.fold takeOneItem (Some state.Rest) pricing.Items
 
